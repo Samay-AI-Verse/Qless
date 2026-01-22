@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../providers/cart_provider.dart';
 import 'cart_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -176,149 +177,151 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white, // White Background as Primary
       body: Stack(
         children: [
-          // Camera View
+          // Camera View (Full Screen)
           MobileScanner(controller: cameraController, onDetect: _onDetect),
-          // Top Overlay with gradient
+
+          // Top Header (White Background)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black.withOpacity(0.7), Colors.transparent],
-                ),
+              color: Colors.white, // White background for the header
+              padding: const EdgeInsets.only(
+                top: 50, // Safe area approximation
+                bottom: 20,
+                left: 24,
+                right: 24,
               ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const Text(
-                        'Scan Product',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Consumer<CartProvider>(
-                        builder: (context, cart, child) => Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.shopping_cart_outlined,
-                                color: Colors.white,
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const CartScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                            if (cart.itemCount > 0)
-                              Positioned(
-                                right: 8,
-                                top: 8,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF10B981),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 18,
-                                    minHeight: 18,
-                                  ),
-                                  child: Text(
-                                    '${cart.itemCount}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Q-Less',
+                    style: GoogleFonts.pacifico(
+                      color: Colors.black, // Black Text
+                      fontSize: 28,
+                      letterSpacing: -1.5,
+                    ),
                   ),
-                ),
+                  Consumer<CartProvider>(
+                    builder: (context, cart, child) => Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.shopping_cart_outlined,
+                            color: Colors.black, // Black Icon
+                            size: 28,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CartScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        if (cart.itemCount > 0)
+                          Positioned(
+                            right: 6,
+                            top: 6,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.black, // Black badge background
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                '${cart.itemCount}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          // Scanning Frame
+
+          // Scanning Frame (Black Accents)
           Center(
             child: Container(
               width: 280,
               height: 280,
               decoration: BoxDecoration(
+                // Slight transparent white border to separate camera from dark background if any,
+                // but user wants White theme. Let's use Black borders for the frame.
                 border: Border.all(
-                  color: isScanning ? const Color(0xFF10B981) : Colors.white,
-                  width: 3,
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
                 ),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Stack(
                 children: [
-                  // Corner decorations
+                  // Corner decorations (Black)
                   ...List.generate(4, (index) {
                     return Positioned(
-                      top: index < 2 ? 0 : null,
-                      bottom: index >= 2 ? 0 : null,
-                      left: index % 2 == 0 ? 0 : null,
-                      right: index % 2 == 1 ? 0 : null,
+                      top: index < 2 ? -2.5 : null,
+                      bottom: index >= 2 ? -2.5 : null,
+                      left: index % 2 == 0 ? -2.5 : null,
+                      right: index % 2 == 1 ? -2.5 : null,
                       child: Container(
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topLeft: index == 0
+                                ? const Radius.circular(20)
+                                : Radius.zero,
+                            topRight: index == 1
+                                ? const Radius.circular(20)
+                                : Radius.zero,
+                            bottomLeft: index == 2
+                                ? const Radius.circular(20)
+                                : Radius.zero,
+                            bottomRight: index == 3
+                                ? const Radius.circular(20)
+                                : Radius.zero,
+                          ),
                           border: Border(
                             top: index < 2
                                 ? BorderSide(
-                                    color: isScanning
-                                        ? const Color(0xFF10B981)
-                                        : Colors.white,
+                                    color: Colors.black, // Black corners
                                     width: 5,
                                   )
                                 : BorderSide.none,
                             bottom: index >= 2
                                 ? BorderSide(
-                                    color: isScanning
-                                        ? const Color(0xFF10B981)
-                                        : Colors.white,
+                                    color: Colors.black, // Black corners
                                     width: 5,
                                   )
                                 : BorderSide.none,
                             left: index % 2 == 0
                                 ? BorderSide(
-                                    color: isScanning
-                                        ? const Color(0xFF10B981)
-                                        : Colors.white,
+                                    color: Colors.black, // Black corners
                                     width: 5,
                                   )
                                 : BorderSide.none,
                             right: index % 2 == 1
                                 ? BorderSide(
-                                    color: isScanning
-                                        ? const Color(0xFF10B981)
-                                        : Colors.white,
+                                    color: Colors.black, // Black corners
                                     width: 5,
                                   )
                                 : BorderSide.none,
@@ -338,14 +341,12 @@ class _ScanScreenState extends State<ScanScreen> {
                           left: 0,
                           right: 0,
                           child: Container(
-                            height: 4,
+                            height: 2,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981),
+                              color: Colors.black, // Black scanning line
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(
-                                    0xFF10B981,
-                                  ).withOpacity(0.5),
+                                  color: Colors.black.withOpacity(0.5),
                                   blurRadius: 10,
                                 ),
                               ],
@@ -363,82 +364,60 @@ class _ScanScreenState extends State<ScanScreen> {
               ),
             ),
           ),
-          // Bottom Overlay
+
+          // Bottom Control Area (White Background)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.8), Colors.transparent],
-                ),
-              ),
+              padding: const EdgeInsets.all(24),
+              color: Colors.white, // White background
               child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.qr_code_scanner,
-                        color: Colors.white,
-                        size: 40,
+                child: Column(
+                  children: [
+                    Text(
+                      isScanning
+                          ? 'Point camera at product barcode'
+                          : 'Product scanned!',
+                      style: const TextStyle(
+                        color: Colors.black, // Black text
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        isScanning
-                            ? 'Point camera at product barcode'
-                            : 'Product scanned!',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Scan barcodes to add items to your cart',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              cameraController.torchEnabled
-                                  ? Icons.flash_on
-                                  : Icons.flash_off,
-                              color: Colors.white,
-                              size: 28,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 30),
+                    // Torch
+                    GestureDetector(
+                      onTap: () {
+                        cameraController.toggleTorch();
+                        setState(() {});
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black, // Black background for button
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
                             ),
-                            onPressed: () {
-                              cameraController.toggleTorch();
-                              setState(() {});
-                            },
-                          ),
-                          const SizedBox(width: 40),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.flip_camera_ios,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                            onPressed: () {
-                              cameraController.switchCamera();
-                            },
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Icon(
+                          cameraController.torchEnabled
+                              ? Icons.flash_on
+                              : Icons.flash_off,
+                          color: Colors.white, // White icon for contrast
+                          size: 32,
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
             ),

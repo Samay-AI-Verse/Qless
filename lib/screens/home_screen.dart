@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: Stack(
         children: [
           // Drawer (always in background)
@@ -119,16 +119,26 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                   ),
-                  // Dim overlay when drawer is open
                   if (_isDrawerOpen)
-                    FadeTransition(
-                      opacity: _dimAnimation,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: _isDrawerOpen
-                              ? BorderRadius.circular(20)
-                              : BorderRadius.zero,
+                    IgnorePointer(
+                      ignoring: false, // Explicitly handle touches
+                      child: GestureDetector(
+                        onHorizontalDragEnd: (details) {
+                          if (details.primaryVelocity! < 0) {
+                            _toggleDrawer();
+                          }
+                        },
+                        onTap: _toggleDrawer,
+                        child: FadeTransition(
+                          opacity: _dimAnimation,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: _isDrawerOpen
+                                  ? BorderRadius.circular(20)
+                                  : BorderRadius.zero,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -138,22 +148,31 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ScanScreen()),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF2563EB), // Tech Blue
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2563EB).withOpacity(0.4),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        backgroundColor: Colors.black,
-        icon: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 24),
-        label: const Text(
-          'Scan',
-          style: TextStyle(
+        child: FloatingActionButton(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ScanScreen()),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: const Icon(
+            Icons.qr_code_scanner,
             color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
+            size: 28,
           ),
         ),
-        elevation: 8,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
@@ -172,11 +191,9 @@ class _HomeScreenState extends State<HomeScreen>
               Text(
                 'Q-Less',
                 style: GoogleFonts.pacifico(
-                  // or .dancingScript(), .greatVibes()
-                  color: Colors.black,
+                  color: const Color(0xFF0F172A), // Main Text
                   fontSize: 28,
                   letterSpacing: -1.5,
-                  // Note: some cursive fonts only have one weight
                 ),
               ),
 
@@ -192,22 +209,19 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Container(
                     width: 44,
                     height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    color: Colors.transparent,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         const Icon(
                           Icons.shopping_cart_outlined,
-                          color: Colors.white,
-                          size: 22,
+                          color: Colors.black,
+                          size: 28,
                         ),
                         if (cart.itemCount > 0)
                           Positioned(
-                            right: 6,
-                            top: 6,
+                            right: 0,
+                            top: 0,
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: const BoxDecoration(
@@ -215,8 +229,8 @@ class _HomeScreenState extends State<HomeScreen>
                                 shape: BoxShape.circle,
                               ),
                               constraints: const BoxConstraints(
-                                minWidth: 18,
-                                minHeight: 18,
+                                minWidth: 16,
+                                minHeight: 16,
                               ),
                               child: Text(
                                 '${cart.itemCount}',
@@ -416,19 +430,22 @@ class _HomeContentState extends State<HomeContent> {
     {
       'title': 'Scan & Pay',
       'subtitle': 'Skip the queue, shop faster',
-      'gradient': [Color(0xFFEE0979), Color(0xFFFF6A00)],
+      'gradient': [Color(0xFF2563EB), Color(0xFF2563EB)], // Tech Blue solid
       'icon': Icons.qr_code_scanner,
     },
     {
       'title': 'Earn Rewards',
       'subtitle': 'Get credits on every purchase',
-      'gradient': [Color(0xFF56CCF2), Color(0xFF2F80ED)],
+      'gradient': [Color(0xFF1E40AF), Color(0xFF1E40AF)], // Dark Version
       'icon': Icons.card_giftcard,
     },
     {
       'title': 'Fast Checkout',
       'subtitle': 'Pay and exit in seconds',
-      'gradient': [Color(0xFFB06AB3), Color(0xFF4568DC)],
+      'gradient': [
+        Color(0xFF10B981),
+        Color(0xFF10B981),
+      ], // Smart Mint for variety
       'icon': Icons.bolt,
     },
   ];
@@ -444,19 +461,19 @@ class _HomeContentState extends State<HomeContent> {
     {
       'category': 'Groceries',
       'amount': 2450.0,
-      'color': Color(0xFF4CAF50),
+      'color': Color(0xFF22C55E), // Success/Green
       'icon': Icons.shopping_basket,
     },
     {
       'category': 'Beverages',
       'amount': 890.0,
-      'color': Color(0xFF2196F3),
+      'color': Color(0xFF2563EB), // Tech Blue
       'icon': Icons.local_cafe,
     },
     {
       'category': 'Snacks',
       'amount': 650.0,
-      'color': Color(0xFFFF9800),
+      'color': Color(0xFFF59E0B), // Warning/Orange
       'icon': Icons.fastfood,
     },
   ];
@@ -464,55 +481,12 @@ class _HomeContentState extends State<HomeContent> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF8F8F8),
+      color: const Color(0xFFF8FAFC), // Soft off-white
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 20),
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Search coming soon!'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search, color: Colors.grey[400], size: 20),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Search for products...',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             // Banners Slider
             SizedBox(
               height: 160,
@@ -624,15 +598,11 @@ class _HomeContentState extends State<HomeContent> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFF093FB), Color(0xFFF5576C)],
-        ),
+        color: const Color(0xFFF1F5F9), // Soft Premium Background
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFF093FB).withOpacity(0.4),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -647,7 +617,9 @@ class _HomeContentState extends State<HomeContent> {
             child: Icon(
               Icons.card_giftcard,
               size: 140,
-              color: Colors.white.withOpacity(0.1),
+              color: const Color(
+                0xFF2563EB,
+              ).withOpacity(0.05), // Tech Blue hint
             ),
           ),
           Padding(
@@ -661,10 +633,10 @@ class _HomeContentState extends State<HomeContent> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Your Rewards',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Color(0xFF64748B), // Secondary Text
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -673,7 +645,7 @@ class _HomeContentState extends State<HomeContent> {
                         const Text(
                           '1,250',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFF2563EB), // Primary Blue
                             fontSize: 48,
                             fontWeight: FontWeight.bold,
                             height: 1,
@@ -683,7 +655,7 @@ class _HomeContentState extends State<HomeContent> {
                         const Text(
                           'Credits',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Color(0xFF0F172A), // Main Text
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -697,7 +669,10 @@ class _HomeContentState extends State<HomeContent> {
                       child: Stack(
                         children: [
                           CustomPaint(
-                            painter: CircularProgressPainter(percentage: 0.65),
+                            painter: CircularProgressPainter(
+                              percentage: 0.65,
+                              color: const Color(0xFF10B981), // Smart Mint Ring
+                            ),
                             size: const Size(90, 90),
                           ),
                           Center(
@@ -707,16 +682,9 @@ class _HomeContentState extends State<HomeContent> {
                                 const Text(
                                   '65%',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: Color(0xFF0F172A), // Main Text
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  'to next',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.8),
-                                    fontSize: 10,
                                   ),
                                 ),
                               ],
@@ -734,8 +702,15 @@ class _HomeContentState extends State<HomeContent> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 5,
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -743,12 +718,16 @@ class _HomeContentState extends State<HomeContent> {
                       const Text(
                         '₹125 saved this month',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF22C55E), // Success Green
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                      const Icon(
+                        Icons.arrow_forward,
+                        color: Color(0xFF2563EB), // Primary Blue
+                        size: 18,
+                      ),
                     ],
                   ),
                 ),
@@ -764,14 +743,14 @@ class _HomeContentState extends State<HomeContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Recent Purchases',
             style: TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              fontWeight: GoogleFonts.inter().fontWeight ?? FontWeight.bold,
+              color: const Color(0xFF0F172A), // Main Text
             ),
           ),
         ),
@@ -881,7 +860,7 @@ class _HomeContentState extends State<HomeContent> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: const Color(0xFF0F172A), // Main Text
             ),
           ),
         ),
@@ -1005,8 +984,9 @@ class _HomeContentState extends State<HomeContent> {
 // Custom Circular Progress Painter
 class CircularProgressPainter extends CustomPainter {
   final double percentage;
+  final Color color;
 
-  CircularProgressPainter({required this.percentage});
+  CircularProgressPainter({required this.percentage, this.color = Colors.blue});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1019,11 +999,11 @@ class CircularProgressPainter extends CustomPainter {
     final radius = size.width / 2;
 
     // Background circle
-    paint.color = Colors.white.withOpacity(0.3);
+    paint.color = const Color(0xFFE2E8F0); // Slate 200
     canvas.drawCircle(center, radius, paint);
 
     // Progress arc
-    paint.color = Colors.white;
+    paint.color = color;
     const startAngle = -math.pi / 2;
     final sweepAngle = 2 * math.pi * percentage;
     canvas.drawArc(
@@ -1036,5 +1016,5 @@ class CircularProgressPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
