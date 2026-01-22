@@ -6,6 +6,7 @@ import 'scan_screen.dart';
 import 'cart_screen.dart';
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _dimAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
+    _dimAnimation = Tween<double>(begin: 0.0, end: 0.3).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
   }
@@ -92,27 +93,29 @@ class _HomeScreenState extends State<HomeScreen>
                         _toggleDrawer();
                       }
                     },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F8F8),
-                        borderRadius: _isDrawerOpen
-                            ? BorderRadius.circular(20)
-                            : BorderRadius.zero,
-                        boxShadow: _isDrawerOpen
-                            ? [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.5),
-                                  blurRadius: 30,
-                                  offset: const Offset(-10, 0),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Column(
-                        children: [
-                          _buildAppBar(),
-                          Expanded(child: const HomeContent()),
-                        ],
+                    child: ClipRRect(
+                      borderRadius: _isDrawerOpen
+                          ? BorderRadius.circular(20)
+                          : BorderRadius.zero,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F8F8),
+                          boxShadow: _isDrawerOpen
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.5),
+                                    blurRadius: 30,
+                                    offset: const Offset(-10, 0),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Column(
+                          children: [
+                            _buildAppBar(),
+                            Expanded(child: const HomeContent()),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -163,62 +166,20 @@ class _HomeScreenState extends State<HomeScreen>
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // App Title with custom font
-              const Text(
+              Text(
                 'Q-Less',
-                style: TextStyle(
+                style: GoogleFonts.pacifico(
+                  // or .dancingScript(), .greatVibes()
                   color: Colors.black,
-                  fontWeight: FontWeight.w900,
                   fontSize: 28,
                   letterSpacing: -1.5,
-                  fontFamily: '',
+                  // Note: some cursive fonts only have one weight
                 ),
               ),
-              const SizedBox(width: 16),
-              // Compact Search Bar
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Search coming soon!'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                  child: Container(
-                    height: 44,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: Colors.grey[300]!),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search, color: Colors.grey[400], size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Search products...',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
+
               // Cart Icon with Badge
               Consumer<CartProvider>(
                 builder: (context, cart, child) => GestureDetector(
@@ -281,94 +242,106 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildCustomDrawer() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.white, Color(0xFFF5F5F5)],
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        // Allow closing drawer by swiping left from drawer area
+        if (details.primaryVelocity! < 0 && _isDrawerOpen) {
+          _toggleDrawer();
+        }
+      },
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.white, Color(0xFFF5F5F5)],
+          ),
         ),
-      ),
-      padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Profile Section
-          Row(
-            children: [
-              Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF11998E), Color(0xFF38EF7D)],
-                  ),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF11998E).withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+        padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Profile Section
+            Row(
+              children: [
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF11998E), Color(0xFF38EF7D)],
                     ),
-                  ],
-                ),
-                child: const Icon(Icons.person, size: 40, color: Colors.white),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Guest User',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF11998E).withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'guest@qless.com',
-                      style: TextStyle(color: Colors.black54, fontSize: 14),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    size: 40,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 40),
-          // Menu Items
-          _buildDrawerItem(Icons.home, 'Home', () {
-            _toggleDrawer();
-          }),
-          _buildDrawerItem(Icons.qr_code_scanner, 'Scan & Pay', () {
-            _toggleDrawer();
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ScanScreen()),
-            );
-          }),
-          _buildDrawerItem(Icons.receipt_long, 'My Purchases', () {
-            _toggleDrawer();
-          }),
-          _buildDrawerItem(Icons.card_giftcard, 'My Rewards', () {
-            _toggleDrawer();
-          }),
-          const Divider(color: Colors.black12, height: 40),
-          _buildDrawerItem(Icons.settings, 'Settings', () {}),
-          _buildDrawerItem(Icons.help_outline, 'Help & Support', () {}),
-          const Spacer(),
-          // Version
-          const Padding(
-            padding: EdgeInsets.only(bottom: 40),
-            child: Text(
-              'Version 1.0.0',
-              style: TextStyle(color: Colors.black26, fontSize: 12),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Guest User',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'guest@qless.com',
+                        style: TextStyle(color: Colors.black54, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 40),
+            // Menu Items
+            _buildDrawerItem(Icons.home, 'Home', () {
+              _toggleDrawer();
+            }),
+            _buildDrawerItem(Icons.qr_code_scanner, 'Scan & Pay', () {
+              _toggleDrawer();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ScanScreen()),
+              );
+            }),
+            _buildDrawerItem(Icons.receipt_long, 'My Purchases', () {
+              _toggleDrawer();
+            }),
+            _buildDrawerItem(Icons.card_giftcard, 'My Rewards', () {
+              _toggleDrawer();
+            }),
+            const Divider(color: Colors.black12, height: 40),
+            _buildDrawerItem(Icons.settings, 'Settings', () {}),
+            _buildDrawerItem(Icons.help_outline, 'Help & Support', () {}),
+            const Spacer(),
+            // Version
+            const Padding(
+              padding: EdgeInsets.only(bottom: 40),
+              child: Text(
+                'Version 1.0.0',
+                style: TextStyle(color: Colors.black26, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -497,6 +470,49 @@ class _HomeContentState extends State<HomeContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Search coming soon!'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, color: Colors.grey[400], size: 20),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Search for products...',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             // Banners Slider
             SizedBox(
               height: 160,
