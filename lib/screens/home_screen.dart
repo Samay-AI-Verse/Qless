@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'package:google_fonts/google_fonts.dart';
 import 'purchase_history_screen.dart';
 import 'rewards_screen.dart';
+import 'exit_pass_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -769,107 +770,182 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildPurchaseHistory() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Recent Purchases',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: GoogleFonts.inter().fontWeight ?? FontWeight.bold,
-              color: const Color(0xFF0F172A), // Main Text
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 150,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            itemCount: _recentPurchases.length,
-            itemBuilder: (context, index) {
-              final purchase = _recentPurchases[index];
-              return Container(
-                width: 200,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+    return Consumer<CartProvider>(
+      builder: (context, cartProvider, child) {
+        // Use real orders if available, otherwise show "No recent orders" or mock if preferred.
+        // For this demo, let's prepend real orders to mock ones or just show real ones.
+        // User asked to "show the real purchased data".
+
+        final realOrders = cartProvider.orders;
+
+        if (realOrders.isEmpty && _recentPurchases.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Recent Purchases',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: GoogleFonts.inter().fontWeight ?? FontWeight.bold,
+                  color: const Color(0xFF0F172A), // Main Text
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 150,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                // Combined length or just real orders? lets show real then mock
+                itemCount: realOrders.length + _recentPurchases.length,
+                itemBuilder: (context, index) {
+                  // Determine if we are showing a real order or a mock one
+                  final isRealOrder = index < realOrders.length;
+                  final Map<String, dynamic> data;
+
+                  if (isRealOrder) {
+                    data = realOrders[index];
+                  } else {
+                    data = _recentPurchases[index - realOrders.length];
+                  }
+
+                  return GestureDetector(
+                    onTap: () {
+                      if (isRealOrder) {
+                        // Open Exit Pass / QR for Real Orders
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ExitPassScreen(
+                              transactionId: data['id'],
+                              amount: data['total'],
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.shopping_bag,
-                            color: Colors.green,
-                            size: 18,
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: 200,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                        ),
-                        Text(
-                          purchase['date'] as String,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
+                        ],
+                        border: isRealOrder
+                            ? Border.all(color: Colors.green, width: 1.5)
+                            : null,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.shopping_bag,
+                                  color: Colors.green,
+                                  size: 18,
+                                ),
+                              ),
+                              if (isRealOrder)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'New',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                )
+                              else
+                                Text(
+                                  data['date'] as String,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          purchase['store'] as String,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data['store'] as String,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${data['itemCount'] ?? data['items']} items',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${purchase['items']} items',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '₹${(data['total'] ?? data['amount']).toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              if (isRealOrder)
+                                const Icon(
+                                  Icons.qr_code,
+                                  size: 20,
+                                  color: Colors.black54,
+                                ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '₹${purchase['amount'].toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

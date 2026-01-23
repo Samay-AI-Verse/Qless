@@ -584,7 +584,7 @@ class _ScanScreenState extends State<ScanScreen> {
                                 ],
                               ),
                             ),
-                            // Quantity Controls
+                            // Quantity Controls & Delete
                             Row(
                               children: [
                                 _buildQtyBtn(
@@ -611,6 +611,23 @@ class _ScanScreenState extends State<ScanScreen> {
                                     (item['quantity'] as int) + 1,
                                   ),
                                   isAdd: true,
+                                ),
+                                const SizedBox(width: 8),
+                                // Trash Button
+                                InkWell(
+                                  onTap: () => cart.removeItem(item['id']),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.delete_outline,
+                                      size: 18,
+                                      color: Colors.red,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),

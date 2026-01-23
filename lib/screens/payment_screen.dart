@@ -239,13 +239,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
     await Future.delayed(const Duration(seconds: 2));
 
     if (mounted) {
-      // Clear cart
-      Provider.of<CartProvider>(context, listen: false).clearCart();
+      // Process order and get Real ID
+      final orderId = Provider.of<CartProvider>(
+        context,
+        listen: false,
+      ).completeOrder();
+      final currentTotal =
+          Provider.of<CartProvider>(
+                context,
+                listen: false,
+              ).orders.first['total']
+              as double;
 
-      // Navigate to Exit Pass
+      // Navigate to Exit Pass with REAL Data
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const ExitPassScreen()),
+        MaterialPageRoute(
+          builder: (_) =>
+              ExitPassScreen(transactionId: orderId, amount: currentTotal),
+        ),
       );
     }
   }
