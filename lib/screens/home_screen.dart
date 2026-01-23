@@ -463,12 +463,6 @@ class _HomeContentState extends State<HomeContent> {
     },
   ];
 
-  static const List<Map<String, dynamic>> _recentPurchases = [
-    {'store': 'DMart', 'amount': 450.0, 'items': 5, 'date': '2 days ago'},
-    {'store': 'BigBazaar', 'amount': 890.0, 'items': 8, 'date': '5 days ago'},
-    {'store': 'Reliance', 'amount': 320.0, 'items': 3, 'date': '1 week ago'},
-  ];
-
   // Spending data
   static const List<Map<String, dynamic>> _spendingCategories = [
     {
@@ -772,14 +766,16 @@ class _HomeContentState extends State<HomeContent> {
   Widget _buildPurchaseHistory() {
     return Consumer<CartProvider>(
       builder: (context, cartProvider, child) {
-        // Use real orders if available, otherwise show "No recent orders" or mock if preferred.
-        // For this demo, let's prepend real orders to mock ones or just show real ones.
-        // User asked to "show the real purchased data".
-
         final realOrders = cartProvider.orders;
 
-        if (realOrders.isEmpty && _recentPurchases.isEmpty) {
-          return const SizedBox.shrink();
+        if (realOrders.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'No recent purchases yet',
+              style: TextStyle(color: Colors.grey, fontSize: 14),
+            ),
+          );
         }
 
         return Column(
@@ -802,33 +798,23 @@ class _HomeContentState extends State<HomeContent> {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                // Combined length or just real orders? lets show real then mock
-                itemCount: realOrders.length + _recentPurchases.length,
+                itemCount: realOrders.length,
                 itemBuilder: (context, index) {
-                  // Determine if we are showing a real order or a mock one
-                  final isRealOrder = index < realOrders.length;
-                  final Map<String, dynamic> data;
-
-                  if (isRealOrder) {
-                    data = realOrders[index];
-                  } else {
-                    data = _recentPurchases[index - realOrders.length];
-                  }
+                  final data = realOrders[index];
 
                   return GestureDetector(
                     onTap: () {
-                      if (isRealOrder) {
-                        // Open Exit Pass / QR for Real Orders
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ExitPassScreen(
-                              transactionId: data['id'],
-                              amount: data['total'],
-                            ),
+                      // Open Exit Pass / QR for Real Orders with Items List
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ExitPassScreen(
+                            transactionId: data['id'],
+                            amount: data['total'],
+                            items: data['items'] as List<Map<String, dynamic>>,
                           ),
-                        );
-                      }
+                        ),
+                      );
                     },
                     child: Container(
                       width: 200,
@@ -844,9 +830,7 @@ class _HomeContentState extends State<HomeContent> {
                             offset: const Offset(0, 4),
                           ),
                         ],
-                        border: isRealOrder
-                            ? Border.all(color: Colors.green, width: 1.5)
-                            : null,
+                        border: Border.all(color: Colors.green, width: 1.5),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -867,32 +851,23 @@ class _HomeContentState extends State<HomeContent> {
                                   size: 18,
                                 ),
                               ),
-                              if (isRealOrder)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text(
-                                    'New',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                )
-                              else
-                                Text(
-                                  data['date'] as String,
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'New',
                                   style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
+                                    color: Colors.white,
+                                    fontSize: 10,
                                   ),
                                 ),
+                              ),
                             ],
                           ),
                           Column(
@@ -909,7 +884,7 @@ class _HomeContentState extends State<HomeContent> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${data['itemCount'] ?? data['items']} items',
+                                '${data['itemCount'] ?? data['items'].length} items',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[600],
@@ -928,12 +903,11 @@ class _HomeContentState extends State<HomeContent> {
                                   color: Colors.green,
                                 ),
                               ),
-                              if (isRealOrder)
-                                const Icon(
-                                  Icons.qr_code,
-                                  size: 20,
-                                  color: Colors.black54,
-                                ),
+                              const Icon(
+                                Icons.qr_code,
+                                size: 20,
+                                color: Colors.black54,
+                              ),
                             ],
                           ),
                         ],

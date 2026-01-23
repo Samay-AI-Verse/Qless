@@ -240,23 +240,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     if (mounted) {
       // Process order and get Real ID
-      final orderId = Provider.of<CartProvider>(
-        context,
-        listen: false,
-      ).completeOrder();
-      final currentTotal =
-          Provider.of<CartProvider>(
-                context,
-                listen: false,
-              ).orders.first['total']
-              as double;
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      final orderId = cartProvider.completeOrder();
+      final latestOrder = cartProvider.orders.first;
 
       // Navigate to Exit Pass with REAL Data
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              ExitPassScreen(transactionId: orderId, amount: currentTotal),
+          builder: (_) => ExitPassScreen(
+            transactionId: orderId,
+            amount: latestOrder['total'] as double,
+            items: latestOrder['items'] as List<Map<String, dynamic>>,
+          ),
         ),
       );
     }
