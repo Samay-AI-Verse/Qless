@@ -2,9 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'dart:async';
 import '../providers/cart_provider.dart';
 import 'cart_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../data/product_database.dart';
+import 'payment_screen.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -14,13 +17,30 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  MobileScannerController cameraController = MobileScannerController();
+  // Optimized Camera Controller
+  MobileScannerController cameraController = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    // Limit formats to common retail codes for faster detection
+    formats: [
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+      BarcodeFormat.upcA,
+      BarcodeFormat.upcE,
+      BarcodeFormat.qrCode,
+    ],
+    returnImage: false,
+  );
   bool isScanning = true;
   String? lastScannedCode;
+
+  // State for the overlay
+  Map<String, dynamic>? _lastAddedProduct;
+  Timer? _overlayTimer;
 
   @override
   void dispose() {
     cameraController.dispose();
+    _overlayTimer?.cancel();
     super.dispose();
   }
 
@@ -36,13 +56,16 @@ class _ScanScreenState extends State<ScanScreen> {
           isScanning = false;
         });
 
-        _addScannedProductToCart(code);
+        // Use Real Data Lookup
+        _processScannedCode(code);
 
-        // Reset scanning after 2 seconds
-        Future.delayed(const Duration(seconds: 2), () {
+        // Reset scanning after 1.5 seconds (scanner cooldown)
+        Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
             setState(() {
               isScanning = true;
+              // Don't clear lastScannedCode immediately to prevent double scan of same item instantly
+              // But allow rescan after 3 seconds maybe? For now simple logic.
             });
           }
         });
@@ -51,125 +74,25 @@ class _ScanScreenState extends State<ScanScreen> {
     }
   }
 
-  void _addScannedProductToCart(String code) {
-    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+  void _processScannedCode(String code) {
+    // 1. Get Product Data from "Database"
+    final product = ProductDatabase.lookupProduct(code);
 
-    // Mock product data based on scanned code
-    final product = {
-      'id': code,
-      'name': 'Product ${code.substring(0, code.length > 6 ? 6 : code.length)}',
-      'price': (50 + (code.hashCode % 200)).toDouble(),
-      'image': '',
-    };
+    // 2. Add to Cart Provider
+    Provider.of<CartProvider>(context, listen: false).addItem(product);
 
-    cartProvider.addItem(product);
+    // 3. Show "Recent Item" Overlay instead of blocking Dialog
+    setState(() {
+      _lastAddedProduct = product;
+    });
 
-    // Show success overlay
-    _showSuccessOverlay(product);
-  }
-
-  void _showSuccessOverlay(Map<String, dynamic> product) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: Color(0xFF10B981),
-                  size: 50,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Added to Cart!',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                product['name'],
-                style: const TextStyle(fontSize: 16, color: Colors.black87),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '₹${product['price'].toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF10B981),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.black),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        'Continue Scanning',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const CartScreen()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        'View Cart',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    // Auto dismiss after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
+    // 4. Auto-hide overlay after 3 seconds
+    _overlayTimer?.cancel();
+    _overlayTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() {
+          _lastAddedProduct = null;
+        });
       }
     });
   }
@@ -311,7 +234,7 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
           ),
 
-          // 4. Top Header (Transparent with White Text)
+          // 4. Top Header
           Positioned(
             top: 0,
             left: 0,
@@ -325,68 +248,29 @@ class _ScanScreenState extends State<ScanScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                     Text(
-                      'Q-Less',
-                      style: GoogleFonts.pacifico(
+                      'Scan Item',
+                      style: GoogleFonts.outfit(
                         color: Colors.white,
-                        fontSize: 32,
-                        letterSpacing: -1.0,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Consumer<CartProvider>(
-                      builder: (context, cart, child) => Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.3),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.shopping_cart_outlined,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const CartScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          if (cart.itemCount > 0)
-                            Positioned(
-                              right: 4,
-                              top: 4,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Color(
-                                    0xFFEF4444,
-                                  ), // Red for visibility
-                                  shape: BoxShape.circle,
-                                ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
-                                ),
-                                child: Text(
-                                  '${cart.itemCount}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                        ],
+                    IconButton(
+                      icon: Icon(
+                        cameraController.torchEnabled
+                            ? Icons.flash_on
+                            : Icons.flash_off,
+                        color: Colors.white,
                       ),
+                      onPressed: () {
+                        cameraController.toggleTorch();
+                        setState(() {});
+                      },
                     ),
                   ],
                 ),
@@ -394,58 +278,161 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
           ),
 
-          // 5. Bottom Controls (Transparent with White Text)
+          // 5. Recent Item Overlay (Dynamic)
+          if (_lastAddedProduct != null)
+            Positioned(
+              top: 100,
+              left: 20,
+              right: 20,
+              child: _buildRecentItemCard(),
+            ),
+
+          // 6. Bottom Cart Summary & Pay Button
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(30),
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    Text(
-                      isScanning ? 'Scan Product Barcode' : 'Product Scanned!',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 30),
-                    GestureDetector(
-                      onTap: () {
-                        cameraController.toggleTorch();
-                        setState(() {});
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2), // Glass effect
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.5),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          cameraController.torchEnabled
-                              ? Icons.flash_on
-                              : Icons.flash_off,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                    ),
-                  ],
+            child: _buildBottomCartSummary(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentItemCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.check_circle, color: Color(0xFF10B981)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Added to Cart',
+                  style: TextStyle(
+                    color: Color(0xFF10B981),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
+                Text(
+                  _lastAddedProduct!['name'],
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '₹${_lastAddedProduct!['price'].toStringAsFixed(0)}',
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
+                ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBottomCartSummary() {
+    return Consumer<CartProvider>(
+      builder: (context, cart, child) {
+        if (cart.itemCount == 0) return const SizedBox.shrink();
+
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total (${cart.itemCount} items)',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        '₹${cart.totalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PaymentScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black, // Premium Black
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text(
+                      'Pay Now',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

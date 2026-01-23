@@ -7,6 +7,8 @@ import 'cart_screen.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:google_fonts/google_fonts.dart';
+import 'purchase_history_screen.dart';
+import 'rewards_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -338,9 +340,19 @@ class _HomeScreenState extends State<HomeScreen>
             }),
             _buildDrawerItem(Icons.receipt_long, 'My Purchases', () {
               _toggleDrawer();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PurchaseHistoryScreen(),
+                ),
+              );
             }),
             _buildDrawerItem(Icons.card_giftcard, 'My Rewards', () {
               _toggleDrawer();
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RewardsScreen()),
+              );
             }),
             const Divider(color: Colors.black12, height: 40),
             _buildDrawerItem(Icons.settings, 'Settings', () {}),
@@ -579,6 +591,23 @@ class _HomeContentState extends State<HomeContent> {
               ),
             ),
             const SizedBox(height: 28),
+            // Active Session & Budget
+            Consumer<CartProvider>(
+              builder: (context, cart, child) {
+                if (cart.itemCount > 0) {
+                  return Column(
+                    children: [
+                      _buildActiveSessionCard(cart),
+                      const SizedBox(height: 28),
+                      _buildBudgetBar(cart.totalAmount),
+                      const SizedBox(height: 28),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+
             // Credits/Rewards Section
             _buildCreditsSection(),
             const SizedBox(height: 28),
@@ -977,6 +1006,192 @@ class _HomeContentState extends State<HomeContent> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildActiveSessionCard(CartProvider cart) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B0D10), // Charcoal Black
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0B0D10).withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF40E0FF).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.shopping_cart,
+                      color: Color(0xFF40E0FF), // Electric Cyan
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Active Session',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        'Shopping at DMart',
+                        style: TextStyle(color: Colors.white54, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB6FF3B).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'In Progress',
+                  style: TextStyle(
+                    color: Color(0xFFB6FF3B), // Neon Lime
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSessionStat('${cart.itemCount}', 'Items'),
+              Container(width: 1, height: 30, color: Colors.white24),
+              _buildSessionStat(
+                '₹${cart.totalAmount.toStringAsFixed(0)}',
+                'Total',
+              ),
+              Container(width: 1, height: 30, color: Colors.white24),
+              _buildSessionStat('00:45', 'Time'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSessionStat(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white54, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBudgetBar(double currentAmount) {
+    // 2000 is dummy budget limit
+    double budgetLimit = 2000.0;
+    double progress = (currentAmount / budgetLimit).clamp(0.0, 1.0);
+    Color barColor = progress < 0.5
+        ? const Color(0xFFB6FF3B) // Green (Safe)
+        : progress < 0.85
+        ? const Color(0xFFF59E0B) // Orange (Warning)
+        : const Color(0xFFEF4444); // Red (Danger)
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Smart Budget',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              Text(
+                '₹${currentAmount.toStringAsFixed(0)} / ₹${budgetLimit.toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: barColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: const Color(0xFFF1F5F9),
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+              minHeight: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            progress < 0.85
+                ? 'You are within budget'
+                : 'Warning: Approaching limit!',
+            style: TextStyle(
+              fontSize: 12,
+              color: barColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
