@@ -9,6 +9,8 @@ import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import 'purchase_history_screen.dart';
 import 'exit_pass_screen.dart';
+import 'settings_screen.dart';
+import 'help_support_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -352,8 +354,22 @@ class _HomeScreenState extends State<HomeScreen>
                   );
                 }),
                 const Divider(color: Colors.black12, height: 40),
-                _buildDrawerItem(Icons.settings, 'Settings', () {}),
-                _buildDrawerItem(Icons.help_outline, 'Help & Support', () {}),
+                _buildDrawerItem(Icons.settings, 'Settings', () {
+                  _toggleDrawer();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
+                }),
+                _buildDrawerItem(Icons.help_outline, 'Help & Support', () {
+                  _toggleDrawer();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const HelpSupportScreen(),
+                    ),
+                  );
+                }),
                 const Spacer(),
                 // Version
                 const Padding(
@@ -549,21 +565,114 @@ class _HomeContentState extends State<HomeContent> {
                             ],
                           ),
                         ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const CartScreen(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Add More Items Button
+                                OutlinedButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ScanScreen(),
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: const BorderSide(color: Colors.white),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.add, size: 16),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Add More',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Pay Now Button
+                                ElevatedButton(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const CartScreen(),
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Pay Now',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                            const SizedBox(height: 4),
+                            // Cancel Button
+                            TextButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Clear Cart?'),
+                                    content: const Text(
+                                      'Are you sure you want to remove all items?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: const Text('No'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          cart.clearCart();
+                                          Navigator.pop(ctx);
+                                        },
+                                        child: const Text(
+                                          'Yes, Clear',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white.withOpacity(0.7),
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(fontSize: 11),
+                              ),
                             ),
-                          ),
-                          child: const Text('Pay Now'),
+                          ],
                         ),
                       ],
                     ),
@@ -696,70 +805,6 @@ class _HomeContentState extends State<HomeContent> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // Quick Stats Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Your Analytics',
-                    style: GoogleFonts.outfit(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          'Total Spent',
-                          '₹0',
-                          Icons.account_balance_wallet_rounded,
-                          const Color(0xFF8B5CF6),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          'Saved',
-                          '₹0',
-                          Icons.savings_rounded,
-                          const Color(0xFF10B981),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          'Transactions',
-                          '0',
-                          Icons.receipt_long_rounded,
-                          const Color(0xFF3B82F6),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          'Avg. Bill',
-                          '₹0',
-                          Icons.trending_up_rounded,
-                          const Color(0xFFF59E0B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ),
             ),
 
@@ -924,6 +969,75 @@ class _HomeContentState extends State<HomeContent> {
 
             const SizedBox(height: 28),
 
+            // Quick Stats Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your Analytics',
+                    style: GoogleFonts.outfit(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          'Total Spent',
+                          '₹0',
+                          Icons.account_balance_wallet_rounded,
+                          const Color(0xFF8B5CF6),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(
+                          'Saved',
+                          '₹0',
+                          Icons.savings_rounded,
+                          const Color(0xFF10B981),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          'Transactions',
+                          '0',
+                          Icons.receipt_long_rounded,
+                          const Color(0xFF3B82F6),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(
+                          'Avg. Bill',
+                          '₹0',
+                          Icons.trending_up_rounded,
+                          const Color(0xFFF59E0B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            // Recent Purchases
+            _buildPurchaseHistory(),
+
+            const SizedBox(height: 28),
+
             // Monthly Spending Chart
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1000,10 +1114,6 @@ class _HomeContentState extends State<HomeContent> {
                 ),
               ),
             ),
-
-            const SizedBox(height: 28),
-            // Purchase History
-            _buildPurchaseHistory(),
             const SizedBox(height: 100),
           ],
         ),
@@ -1175,91 +1285,108 @@ class _HomeContentState extends State<HomeContent> {
                   final items = order['items'] as List;
                   final total = order['total'] as double;
                   final date = order['date'] as DateTime;
+                  final id = order['id'] as String;
 
-                  return Container(
-                    width: 300,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                      border: Border.all(color: Colors.grey[100]!),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Store Logo
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF00B0FF).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.storefront_rounded,
-                            color: Color(0xFF0091EA),
-                            size: 24,
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ExitPassScreen(
+                            transactionId: id,
+                            amount: total,
+                            items: items
+                                .map((i) => i as Map<String, dynamic>)
+                                .toList(),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        // Details
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "D-Mart, Andheri West", // Hardcoded "Real" Location
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.outfit(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "${date.day}/${date.month}/${date.year} • ${date.hour}:${date.minute.toString().padLeft(2, '0')}",
-                                style: GoogleFonts.outfit(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const Spacer(),
-                              const Divider(),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${items.length} Items',
-                                    style: GoogleFonts.outfit(
-                                      color: Colors.black54,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                      );
+                    },
+                    child: Container(
+                      width: 300,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(color: Colors.grey[100]!),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Store Logo
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00B0FF).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.storefront_rounded,
+                              color: Color(0xFF0091EA),
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "D-Mart, Andheri West", // Hardcoded "Real" Location
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.black,
                                   ),
-                                  Text(
-                                    '₹${total.toStringAsFixed(0)}',
-                                    style: GoogleFonts.outfit(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.green[700],
-                                    ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "${date.day}/${date.month}/${date.year} • ${date.hour}:${date.minute.toString().padLeft(2, '0')}",
+                                  style: GoogleFonts.outfit(
+                                    color: Colors.grey[500],
+                                    fontSize: 12,
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                                const Spacer(),
+                                const Divider(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${items.length} Items',
+                                      style: GoogleFonts.outfit(
+                                        color: Colors.black54,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      '₹${total.toStringAsFixed(0)}',
+                                      style: GoogleFonts.outfit(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Colors.green[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
