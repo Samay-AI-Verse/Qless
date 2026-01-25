@@ -969,6 +969,11 @@ class _HomeContentState extends State<HomeContent> {
 
             const SizedBox(height: 28),
 
+            // Recent Purchases
+            _buildPurchaseHistory(),
+
+            const SizedBox(height: 28),
+
             // Quick Stats Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1030,11 +1035,6 @@ class _HomeContentState extends State<HomeContent> {
                 ],
               ),
             ),
-
-            const SizedBox(height: 28),
-
-            // Recent Purchases
-            _buildPurchaseHistory(),
 
             const SizedBox(height: 28),
 
@@ -1275,7 +1275,7 @@ class _HomeContentState extends State<HomeContent> {
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 140,
+              height: 180,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1303,89 +1303,152 @@ class _HomeContentState extends State<HomeContent> {
                       );
                     },
                     child: Container(
-                      width: 300,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.all(16),
+                      width: 280,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
                           ),
                         ],
-                        border: Border.all(color: Colors.grey[100]!),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Store Logo
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF00B0FF).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Stack(
+                          children: [
+                            // Decorative Background Circle
+                            Positioned(
+                              right: -20,
+                              top: -20,
+                              child: CircleAvatar(
+                                radius: 50,
+                                backgroundColor: const Color(
+                                  0xFF10B981,
+                                ).withOpacity(0.05),
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.storefront_rounded,
-                              color: Color(0xFF0091EA),
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Details
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "D-Mart, Andheri West", // Hardcoded "Real" Location
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.outfit(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "${date.day}/${date.month}/${date.year} • ${date.hour}:${date.minute.toString().padLeft(2, '0')}",
-                                  style: GoogleFonts.outfit(
-                                    color: Colors.grey[500],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const Spacer(),
-                                const Divider(),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '${items.length} Items',
-                                      style: GoogleFonts.outfit(
-                                        color: Colors.black54,
-                                        fontWeight: FontWeight.w500,
+
+                            Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Top Row: Icon + Store Name
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.storefront_rounded,
+                                          color: Color(0xFF64748B),
+                                          size: 20,
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      '₹${total.toStringAsFixed(0)}',
-                                      style: GoogleFonts.outfit(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: Colors.green[700],
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "D-Mart",
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.outfit(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                                color: const Color(0xFF0F172A),
+                                              ),
+                                            ),
+                                            Text(
+                                              "Andheri West",
+                                              style: GoogleFonts.outfit(
+                                                color: Colors.grey[500],
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
+                                    ],
+                                  ),
+
+                                  // Middle Row: Status Badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
                                     ),
-                                  ],
-                                ),
-                              ],
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF10B981,
+                                      ).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 14,
+                                          color: Color(0xFF10B981),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Paid Successfully',
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF10B981),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Bottom Row: Date + Price
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "${date.day} ${_getMonth(date.month)}",
+                                        style: GoogleFonts.outfit(
+                                          color: Colors.grey[400],
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      Text(
+                                        '₹${total.toStringAsFixed(0)}',
+                                        style: GoogleFonts.outfit(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                          color: const Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -1396,5 +1459,23 @@ class _HomeContentState extends State<HomeContent> {
         );
       },
     );
+  }
+
+  String _getMonth(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return months[month - 1];
   }
 }
