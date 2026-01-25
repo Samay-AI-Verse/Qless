@@ -1,14 +1,13 @@
-// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/user_provider.dart';
 import 'scan_screen.dart';
 import 'cart_screen.dart';
 import 'dart:async';
-import 'dart:math' as math;
+import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import 'purchase_history_screen.dart';
-import 'rewards_screen.dart';
 import 'exit_pass_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -259,117 +258,116 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildCustomDrawer() {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        // Allow closing drawer by swiping left from drawer area
-        if (details.primaryVelocity! < 0 && _isDrawerOpen) {
-          _toggleDrawer();
-        }
-      },
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.white, Color(0xFFF5F5F5)],
-          ),
-        ),
-        padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile Section
-            Row(
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        return GestureDetector(
+          onHorizontalDragEnd: (details) {
+            if (details.primaryVelocity! < 0 && _isDrawerOpen) {
+              _toggleDrawer();
+            }
+          },
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, Color(0xFFF5F5F5)],
+              ),
+            ),
+            padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF11998E), Color(0xFF38EF7D)],
-                    ),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF11998E).withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Guest User',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                // Profile Section
+                Row(
+                  children: [
+                    Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF11998E), Color(0xFF38EF7D)],
                         ),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF11998E).withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'guest@qless.com',
-                        style: TextStyle(color: Colors.black54, fontSize: 14),
+                      child: ClipOval(
+                        child: _getProfileWidget(userProvider.profileImagePath),
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userProvider.firstName.isNotEmpty
+                                ? userProvider.fullName
+                                : 'Guest User',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            userProvider.mobileNumber ?? 'No Info',
+                            style: const TextStyle(
+                              color: Colors.black54,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+                // Menu Items
+                _buildDrawerItem(Icons.home, 'Home', () {
+                  _toggleDrawer();
+                }),
+                _buildDrawerItem(Icons.qr_code_scanner, 'Scan & Pay', () {
+                  _toggleDrawer();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ScanScreen()),
+                  );
+                }),
+                _buildDrawerItem(Icons.receipt_long, 'My Purchases', () {
+                  _toggleDrawer();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PurchaseHistoryScreen(),
+                    ),
+                  );
+                }),
+                const Divider(color: Colors.black12, height: 40),
+                _buildDrawerItem(Icons.settings, 'Settings', () {}),
+                _buildDrawerItem(Icons.help_outline, 'Help & Support', () {}),
+                const Spacer(),
+                // Version
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 40),
+                  child: Text(
+                    'Version 1.0.0',
+                    style: TextStyle(color: Colors.black26, fontSize: 12),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 40),
-            // Menu Items
-            _buildDrawerItem(Icons.home, 'Home', () {
-              _toggleDrawer();
-            }),
-            _buildDrawerItem(Icons.qr_code_scanner, 'Scan & Pay', () {
-              _toggleDrawer();
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ScanScreen()),
-              );
-            }),
-            _buildDrawerItem(Icons.receipt_long, 'My Purchases', () {
-              _toggleDrawer();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PurchaseHistoryScreen(),
-                ),
-              );
-            }),
-            _buildDrawerItem(Icons.card_giftcard, 'My Rewards', () {
-              _toggleDrawer();
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RewardsScreen()),
-              );
-            }),
-            const Divider(color: Colors.black12, height: 40),
-            _buildDrawerItem(Icons.settings, 'Settings', () {}),
-            _buildDrawerItem(Icons.help_outline, 'Help & Support', () {}),
-            const Spacer(),
-            // Version
-            const Padding(
-              padding: EdgeInsets.only(bottom: 40),
-              child: Text(
-                'Version 1.0.0',
-                style: TextStyle(color: Colors.black26, fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -393,6 +391,29 @@ class _HomeScreenState extends State<HomeScreen>
       ),
       onTap: onTap,
       contentPadding: EdgeInsets.zero,
+    );
+  }
+
+  Widget _getProfileWidget(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) {
+      return const Icon(Icons.person, size: 40, color: Colors.white);
+    }
+
+    // Assume Short string = Emoji
+    if (imagePath.length <= 8) {
+      return Container(
+        color: Colors.white,
+        alignment: Alignment.center,
+        child: Text(imagePath, style: const TextStyle(fontSize: 35)),
+      );
+    }
+
+    // Else assume file path
+    return Image.file(
+      File(imagePath),
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) =>
+          const Icon(Icons.person, size: 40, color: Colors.white),
     );
   }
 }
@@ -447,41 +468,10 @@ class _HomeContentState extends State<HomeContent> {
       'icon': Icons.qr_code_scanner,
     },
     {
-      'title': 'Earn Rewards',
-      'subtitle': 'Get credits on every purchase',
-      'gradient': [Color(0xFF1E40AF), Color(0xFF1E40AF)], // Dark Version
-      'icon': Icons.card_giftcard,
-    },
-    {
       'title': 'Fast Checkout',
       'subtitle': 'Pay and exit in seconds',
-      'gradient': [
-        Color(0xFF10B981),
-        Color(0xFF10B981),
-      ], // Smart Mint for variety
+      'gradient': [Color(0xFF10B981), Color(0xFF10B981)], // Smart Mint
       'icon': Icons.bolt,
-    },
-  ];
-
-  // Spending data
-  static const List<Map<String, dynamic>> _spendingCategories = [
-    {
-      'category': 'Groceries',
-      'amount': 2450.0,
-      'color': Color(0xFF22C55E), // Success/Green
-      'icon': Icons.shopping_basket,
-    },
-    {
-      'category': 'Beverages',
-      'amount': 890.0,
-      'color': Color(0xFF2563EB), // Tech Blue
-      'icon': Icons.local_cafe,
-    },
-    {
-      'category': 'Snacks',
-      'amount': 650.0,
-      'color': Color(0xFFF59E0B), // Warning/Orange
-      'icon': Icons.fastfood,
     },
   ];
 
@@ -585,180 +575,13 @@ class _HomeContentState extends State<HomeContent> {
                 ),
               ),
             ),
-            const SizedBox(height: 28),
-            // Active Session & Budget
-            Consumer<CartProvider>(
-              builder: (context, cart, child) {
-                if (cart.itemCount > 0) {
-                  return Column(
-                    children: [
-                      _buildActiveSessionCard(cart),
-                      const SizedBox(height: 28),
-                      _buildBudgetBar(cart.totalAmount),
-                      const SizedBox(height: 28),
-                    ],
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
 
-            // Credits/Rewards Section
-            _buildCreditsSection(),
             const SizedBox(height: 28),
             // Purchase History
             _buildPurchaseHistory(),
-            const SizedBox(height: 28),
-            // Spending Analytics (replaced Quick Add)
-            _buildSpendingAnalytics(),
             const SizedBox(height: 100),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildCreditsSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9), // Soft Premium Background
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Background pattern
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Icon(
-              Icons.card_giftcard,
-              size: 140,
-              color: const Color(
-                0xFF2563EB,
-              ).withOpacity(0.05), // Tech Blue hint
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Your Rewards',
-                          style: TextStyle(
-                            color: Color(0xFF64748B), // Secondary Text
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '1,250',
-                          style: TextStyle(
-                            color: Color(0xFF2563EB), // Primary Blue
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            height: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Credits',
-                          style: TextStyle(
-                            color: Color(0xFF0F172A), // Main Text
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Circular progress
-                    SizedBox(
-                      width: 90,
-                      height: 90,
-                      child: Stack(
-                        children: [
-                          CustomPaint(
-                            painter: CircularProgressPainter(
-                              percentage: 0.65,
-                              color: const Color(0xFF10B981), // Smart Mint Ring
-                            ),
-                            size: const Size(90, 90),
-                          ),
-                          Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text(
-                                  '65%',
-                                  style: TextStyle(
-                                    color: Color(0xFF0F172A), // Main Text
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '₹125 saved this month',
-                        style: TextStyle(
-                          color: Color(0xFF22C55E), // Success Green
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward,
-                        color: Color(0xFF2563EB), // Primary Blue
-                        size: 18,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -793,6 +616,7 @@ class _HomeContentState extends State<HomeContent> {
               ),
             ),
             const SizedBox(height: 16),
+            // ... (Your existing list logic, assuming it was truncated in view but we keep the header)
             SizedBox(
               height: 150,
               child: ListView.builder(
@@ -800,118 +624,52 @@ class _HomeContentState extends State<HomeContent> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 itemCount: realOrders.length,
                 itemBuilder: (context, index) {
-                  final data = realOrders[index];
+                  // Simplified Item Builder reusing your style from previous turn
+                  final order = realOrders[index];
+                  final items = order['items'] as List;
+                  final total = order['total'] as double;
+                  final id = order['id'] as String;
 
-                  return GestureDetector(
-                    onTap: () {
-                      // Open Exit Pass / QR for Real Orders with Items List
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ExitPassScreen(
-                            transactionId: data['id'],
-                            amount: data['total'],
-                            items: data['items'] as List<Map<String, dynamic>>,
+                  return Container(
+                    width: 280,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${items.length} Items',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              '₹${total.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(),
+                        Text(
+                          'Order #${id.substring(0, (id.length > 8 ? 8 : id.length))}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
                           ),
                         ),
-                      );
-                    },
-                    child: Container(
-                      width: 200,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                        border: Border.all(color: Colors.green, width: 1.5),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.shopping_bag,
-                                  color: Colors.green,
-                                  size: 18,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  'New',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                data['store'] as String,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${data['itemCount'] ?? data['items'].length} items',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '₹${(data['total'] ?? data['amount']).toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              const Icon(
-                                Icons.qr_code,
-                                size: 20,
-                                color: Colors.black54,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                   );
                 },
@@ -922,364 +680,4 @@ class _HomeContentState extends State<HomeContent> {
       },
     );
   }
-
-  Widget _buildSpendingAnalytics() {
-    final totalSpent = _spendingCategories.fold(
-      0.0,
-      (sum, item) => sum + (item['amount'] as double),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Spending Analytics',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF0F172A), // Main Text
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Total Spent',
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                  Text(
-                    '₹${totalSpent.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              ...List.generate(_spendingCategories.length, (index) {
-                final category = _spendingCategories[index];
-                final percentage = (category['amount'] as double) / totalSpent;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: (category['color'] as Color).withOpacity(
-                                0.1,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              category['icon'] as IconData,
-                              color: category['color'] as Color,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  category['category'] as String,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: LinearProgressIndicator(
-                                    value: percentage,
-                                    backgroundColor: Colors.grey[200],
-                                    color: category['color'] as Color,
-                                    minHeight: 6,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                '₹${(category['amount'] as double).toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                '${(percentage * 100).toInt()}%',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActiveSessionCard(CartProvider cart) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B0D10), // Charcoal Black
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0B0D10).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF40E0FF).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.shopping_cart,
-                      color: Color(0xFF40E0FF), // Electric Cyan
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Active Session',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        'Shopping at DMart',
-                        style: TextStyle(color: Colors.white54, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFB6FF3B).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'In Progress',
-                  style: TextStyle(
-                    color: Color(0xFFB6FF3B), // Neon Lime
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildSessionStat('${cart.itemCount}', 'Items'),
-              Container(width: 1, height: 30, color: Colors.white24),
-              _buildSessionStat(
-                '₹${cart.totalAmount.toStringAsFixed(0)}',
-                'Total',
-              ),
-              Container(width: 1, height: 30, color: Colors.white24),
-              _buildSessionStat('00:45', 'Time'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSessionStat(String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBudgetBar(double currentAmount) {
-    // 2000 is dummy budget limit
-    double budgetLimit = 2000.0;
-    double progress = (currentAmount / budgetLimit).clamp(0.0, 1.0);
-    Color barColor = progress < 0.5
-        ? const Color(0xFFB6FF3B) // Green (Safe)
-        : progress < 0.85
-        ? const Color(0xFFF59E0B) // Orange (Warning)
-        : const Color(0xFFEF4444); // Red (Danger)
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Smart Budget',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              Text(
-                '₹${currentAmount.toStringAsFixed(0)} / ₹${budgetLimit.toStringAsFixed(0)}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: barColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: const Color(0xFFF1F5F9),
-              valueColor: AlwaysStoppedAnimation<Color>(barColor),
-              minHeight: 12,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            progress < 0.85
-                ? 'You are within budget'
-                : 'Warning: Approaching limit!',
-            style: TextStyle(
-              fontSize: 12,
-              color: barColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Custom Circular Progress Painter
-class CircularProgressPainter extends CustomPainter {
-  final double percentage;
-  final Color color;
-
-  CircularProgressPainter({required this.percentage, this.color = Colors.blue});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    // Background circle
-    paint.color = const Color(0xFFE2E8F0); // Slate 200
-    canvas.drawCircle(center, radius, paint);
-
-    // Progress arc
-    paint.color = color;
-    const startAngle = -math.pi / 2;
-    final sweepAngle = 2 * math.pi * percentage;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

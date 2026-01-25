@@ -23,6 +23,10 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   google_fonts: ^7.1.0
+  http: ^1.6.0
+  flutter_animate: ^4.5.2
+  image_picker: ^1.2.1
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:

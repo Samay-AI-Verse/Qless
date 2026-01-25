@@ -1,11 +1,15 @@
 // lib/screens/scan_screen.dart
+import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:provider/provider.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'dart:async';
+import 'dart:io';
 import '../providers/cart_provider.dart';
-import 'cart_screen.dart';
+
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart'; // Add this for DeviceOrientation
 import '../data/product_database.dart';
 import 'payment_screen.dart';
 
@@ -17,61 +21,143 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  // Optimized Camera Controller
-  MobileScannerController cameraController = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates,
-    // Limit formats to common retail codes for faster detection
-    formats: [
-      BarcodeFormat.ean13,
-      BarcodeFormat.ean8,
-      BarcodeFormat.upcA,
-      BarcodeFormat.upcE,
-      BarcodeFormat.qrCode,
-    ],
-    returnImage: false,
-  );
-  bool isScanning = true;
+  CameraController? _controller;
+  final BarcodeScanner _barcodeScanner = BarcodeScanner();
+  bool _isBusy = false;
+  bool _isScanning = true;
   String? lastScannedCode;
+  List<CameraDescription> _cameras = [];
 
   // State for the overlay
   Map<String, dynamic>? _lastAddedProduct;
   Timer? _overlayTimer;
 
   @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+
+  Future<void> _initializeCamera() async {
+    try {
+      _cameras = await availableCameras();
+      if (_cameras.isEmpty) {
+        debugPrint('No cameras found');
+        return;
+      }
+
+      // Select back camera
+      final camera = _cameras.firstWhere(
+        (camera) => camera.lensDirection == CameraLensDirection.back,
+        orElse: () => _cameras.first,
+      );
+
+      _controller = CameraController(
+        camera,
+        ResolutionPreset.high,
+        enableAudio: false,
+        imageFormatGroup: Platform.isAndroid
+            ? ImageFormatGroup.nv21
+            : ImageFormatGroup.bgra8888,
+      );
+
+      await _controller!.initialize();
+      await _controller!.startImageStream(_processCameraImage);
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('Error initializing camera: $e');
+    }
+  }
+
+  @override
   void dispose() {
-    cameraController.dispose();
+    _controller?.dispose();
+    _barcodeScanner.close();
     _overlayTimer?.cancel();
     super.dispose();
   }
 
-  void _onDetect(BarcodeCapture capture) {
-    if (!isScanning) return;
+  Future<void> _processCameraImage(CameraImage image) async {
+    if (_isBusy || !_isScanning) return;
+    _isBusy = true;
 
-    final List<Barcode> barcodes = capture.barcodes;
-    for (final barcode in barcodes) {
-      final String? code = barcode.rawValue;
-      if (code != null && code != lastScannedCode) {
-        setState(() {
-          lastScannedCode = code;
-          isScanning = false;
-        });
+    try {
+      final inputImage = _inputImageFromCameraImage(image);
+      if (inputImage == null) return;
 
-        // Use Real Data Lookup
-        _processScannedCode(code);
+      final barcodes = await _barcodeScanner.processImage(inputImage);
 
-        // Reset scanning after 1.5 seconds (scanner cooldown)
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (mounted) {
-            setState(() {
-              isScanning = true;
-              // Don't clear lastScannedCode immediately to prevent double scan of same item instantly
-              // But allow rescan after 3 seconds maybe? For now simple logic.
-            });
-          }
-        });
-        break;
+      for (final barcode in barcodes) {
+        final String? code = barcode.rawValue;
+        if (code != null && code.isNotEmpty && code != lastScannedCode) {
+          _handleValidScan(code);
+          break;
+        }
       }
+    } catch (e) {
+      debugPrint('Error processing image: $e');
+    } finally {
+      _isBusy = false;
     }
+  }
+
+  InputImage? _inputImageFromCameraImage(CameraImage image) {
+    if (_controller == null) return null;
+
+    final camera = _controller!.description;
+    final sensorOrientation = camera.sensorOrientation;
+    // final orientations = ... (removed unused variable)
+
+    // Assuming UI is locked to portraitUp for simplicity or getting current orientation
+    final sensorRotation =
+        InputImageRotationValue.fromRawValue(sensorOrientation) ??
+        InputImageRotation.rotation0deg; // Fallback
+
+    final format = InputImageFormatValue.fromRawValue(image.format.raw);
+    if (format == null) return null;
+
+    // Just concatenation for NV21/BGRA8888
+    final bytes = _concatenatePlanes(image.planes);
+
+    return InputImage.fromBytes(
+      bytes: bytes,
+      metadata: InputImageMetadata(
+        size: Size(image.width.toDouble(), image.height.toDouble()),
+        rotation: sensorRotation, // Simplified for this context
+        format: format,
+        bytesPerRow: image.planes.first.bytesPerRow,
+      ),
+    );
+  }
+
+  Uint8List _concatenatePlanes(List<Plane> planes) {
+    final WriteBuffer allBytes = WriteBuffer();
+    for (final Plane plane in planes) {
+      allBytes.putUint8List(plane.bytes);
+    }
+    return allBytes.done().buffer.asUint8List();
+  }
+
+  void _handleValidScan(String code) {
+    setState(() {
+      lastScannedCode = code;
+      _isScanning = false;
+    });
+
+    _processScannedCode(code);
+
+    // Resume scanning after 1.5 seconds
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() {
+          _isScanning = true;
+          // Don't clear lastScannedCode immediately to prevent instant re-scan
+        });
+      }
+    });
   }
 
   void _processScannedCode(String code) {
@@ -81,12 +167,12 @@ class _ScanScreenState extends State<ScanScreen> {
     // 2. Add to Cart Provider
     Provider.of<CartProvider>(context, listen: false).addItem(product);
 
-    // 3. Show "Recent Item" Overlay instead of blocking Dialog
+    // 3. Show "Recent Item" Overlay
     setState(() {
       _lastAddedProduct = product;
     });
 
-    // 4. Auto-hide overlay after 3 seconds
+    // 4. Auto-hide overlay
     _overlayTimer?.cancel();
     _overlayTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) {
@@ -97,14 +183,32 @@ class _ScanScreenState extends State<ScanScreen> {
     });
   }
 
+  void _toggleTorch() {
+    if (_controller != null && _controller!.value.isInitialized) {
+      final currentMode = _controller!.value.flashMode;
+      final newMode = currentMode == FlashMode.torch
+          ? FlashMode.off
+          : FlashMode.torch;
+      _controller!.setFlashMode(newMode);
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_controller == null || !_controller!.value.isInitialized) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 1. Camera View (Full Screen)
-          MobileScanner(controller: cameraController, onDetect: _onDetect),
+          // 1. Camera View
+          SizedBox.expand(child: CameraPreview(_controller!)),
 
           // 2. Dark Overlay with Cutout
           ColorFiltered(
@@ -134,7 +238,7 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
           ),
 
-          // 3. Scanner Frame (White Curvy Borders)
+          // 3. Scanner Frame
           Center(
             child: Container(
               width: 280,
@@ -144,7 +248,6 @@ class _ScanScreenState extends State<ScanScreen> {
               ),
               child: Stack(
                 children: [
-                  // White Corner Decorations
                   ...List.generate(4, (index) {
                     return Positioned(
                       top: index < 2 ? -2.5 : null,
@@ -199,8 +302,7 @@ class _ScanScreenState extends State<ScanScreen> {
                       ),
                     );
                   }),
-                  // Scanning line animation
-                  if (isScanning)
+                  if (_isScanning)
                     TweenAnimationBuilder(
                       tween: Tween<double>(begin: 0, end: 1),
                       duration: const Duration(seconds: 2),
@@ -224,9 +326,7 @@ class _ScanScreenState extends State<ScanScreen> {
                         );
                       },
                       onEnd: () {
-                        if (mounted && isScanning) {
-                          setState(() {});
-                        }
+                        if (mounted && _isScanning) setState(() {});
                       },
                     ),
                 ],
@@ -262,15 +362,12 @@ class _ScanScreenState extends State<ScanScreen> {
                     ),
                     IconButton(
                       icon: Icon(
-                        cameraController.torchEnabled
+                        _controller?.value.flashMode == FlashMode.torch
                             ? Icons.flash_on
                             : Icons.flash_off,
                         color: Colors.white,
                       ),
-                      onPressed: () {
-                        cameraController.toggleTorch();
-                        setState(() {});
-                      },
+                      onPressed: _toggleTorch,
                     ),
                   ],
                 ),
@@ -278,7 +375,7 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
           ),
 
-          // 5. Recent Item Overlay (Dynamic)
+          // 5. Recent Item Overlay
           if (_lastAddedProduct != null)
             Positioned(
               top: 100,
@@ -287,7 +384,7 @@ class _ScanScreenState extends State<ScanScreen> {
               child: _buildRecentItemCard(),
             ),
 
-          // 6. BOTTOM SHEET CART (Draggable)
+          // 6. BOTTOM SHEET CART
           Consumer<CartProvider>(
             builder: (context, cart, child) {
               if (cart.itemCount == 0) return const SizedBox.shrink();
@@ -313,7 +410,6 @@ class _ScanScreenState extends State<ScanScreen> {
                     ),
                     child: Column(
                       children: [
-                        // Handle & Summary Header (Always Visible)
                         SingleChildScrollView(
                           controller: scrollController,
                           physics: const ClampingScrollPhysics(),
@@ -395,8 +491,6 @@ class _ScanScreenState extends State<ScanScreen> {
                             ],
                           ),
                         ),
-
-                        // Expanded Cart List
                         Expanded(
                           child: ListView.separated(
                             controller: scrollController,
@@ -408,7 +502,6 @@ class _ScanScreenState extends State<ScanScreen> {
                               final item = cart.items[index];
                               return Row(
                                 children: [
-                                  // Product Icon
                                   Container(
                                     width: 50,
                                     height: 50,
@@ -423,7 +516,6 @@ class _ScanScreenState extends State<ScanScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 16),
-                                  // Details
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -448,7 +540,6 @@ class _ScanScreenState extends State<ScanScreen> {
                                       ],
                                     ),
                                   ),
-                                  // Controls
                                   Row(
                                     children: [
                                       _buildQtyBtn(
